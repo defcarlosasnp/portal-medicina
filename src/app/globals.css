@@ -1,24 +1,27 @@
-/* Scrollbar Minimalista para el Sidebar */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 5px;
-  }
+/* Estilos Globales Forzados */
+body {
+  background-color: #0f172a; /* Forzamos el fondo oscuro aquí también */
+  color: white;
+}
 
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
+/* Scrollbar Minimalista - Fuera de @layer para asegurar carga */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
 
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    transition: all 0.3s ease;
-  }
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
 
-  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-    background: rgba(168, 85, 247, 0.4); /* Color púrpura suave al hacer hover */
-  }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.4);
 }
