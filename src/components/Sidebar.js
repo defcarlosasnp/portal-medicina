@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Calendar, LogOut, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Calendar, LogOut, ChevronDown, Map, Clock } from 'lucide-react';
 
 export default function Sidebar({ 
   view, 
@@ -28,23 +28,29 @@ export default function Sidebar({
           onClick={() => setView('dashboard')} 
         />
         <SidebarItem 
+          icon={<Clock size={20} />} 
+          label="Horario" 
+          active={view === 'horario'} 
+          onClick={() => setView('horario')} 
+        />
+        <SidebarItem 
           icon={<Calendar size={20} />} 
           label="Calendario" 
           active={view === 'calendario'} 
           onClick={() => setView('calendario')} 
         />
         <SidebarItem
-        icon ={<malla size={20} />}
-        label="Malla"
-        active={view === 'malla'}
-        onClick={() => setView('malla')}
+          icon={<Map size={20} />}
+          label="Malla"
+          active={view === 'malla'}
+          onClick={() => setView('malla')}
         />
       </nav>
 
       {/* Sección de Selección de Ramos */}
       <div className="hidden md:flex flex-col flex-1 min-h-0">
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 px-2">
-          Malla Curricular
+          Gestión de Ramos
         </p>
         
         {/* Selector de Semestre */}
@@ -55,7 +61,7 @@ export default function Sidebar({
             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold text-slate-300 appearance-none outline-none focus:border-purple-500 transition-all cursor-pointer"
           >
             {Object.keys(malla).map(sem => (
-              <option key={sem} value={sem} className="bg-[#1e293b]">{sem}</option>
+              <option key={sem} value={sem} className="bg-[#1e293b] text-white">{sem}</option>
             ))}
           </select>
           <ChevronDown size={14} className="absolute right-5 top-3.5 text-slate-500 pointer-events-none" />
