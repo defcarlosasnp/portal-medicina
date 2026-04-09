@@ -172,12 +172,17 @@ export default function Page() {
 
   const agregarNota = async () => {
     if (nuevaNota.nombre && nuevaNota.nota && nuevaNota.peso && selectedRamo) {
-      const { data } = await supabase.from('notas').insert([{
+      const { data, error } = await supabase.from('notas').insert([{
         nombre: nuevaNota.nombre,
         valor: parseFloat(nuevaNota.nota),
         ponderacion: parseInt(nuevaNota.peso),
-        ramo_id: selectedRamo.id
+        ramo_id: parseInt(selectedRamo.id) 
       }]).select();
+
+      if (error) {
+        console.error("Error al guardar:", error.message);
+        return;
+      }
 
       if (data) {
         const notaNueva = { 
@@ -195,7 +200,6 @@ export default function Page() {
       }
     }
   };
-
   const eliminarNota = async (idNota) => {
     const { error } = await supabase.from('notas').delete().eq('id', idNota);
     if (!error) {
