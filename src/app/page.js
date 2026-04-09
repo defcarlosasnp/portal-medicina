@@ -255,13 +255,18 @@ export default function Page() {
           )}
 
           {view === 'malla' && (
-            <MallaCurricular 
-              key="malla"
-              malla={mallaMedicina}
-              aprobados={aprobados}
-              toggleAprobado={toggleAprobado}
-            />
-          )}
+  <MallaCurricular 
+    key="malla"
+    malla={mallaMedicina}
+    aprobados={aprobados}
+    toggleAprobado={toggleAprobado}
+    // Añadimos esto para que pueda entrar a ver el detalle
+    onSelectRamo={(ramoId) => {
+      const ramoCompleto = obtenerRamosCompletos().find(r => r.id === ramoId);
+      setSelectedRamo(ramoCompleto);
+    }}
+  />
+)}
 
           {view === 'calendario' && <Calendario key="cal" />}
 
