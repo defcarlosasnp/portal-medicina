@@ -9,7 +9,8 @@ import Calendario from '../components/Calendario';
 import RamoDetail from '../components/RamoDetail';
 import ModalNota from '../components/ModalNota';
 import Login from '../components/Login';
-import MallaCurricular from '../components/MallaCurricular'; // Importa el nuevo componente
+import MallaCurricular from '../components/MallaCurricular';
+import Horario from '../components/Horario'; // Importación añadida
 
 // --- BASE DE DATOS DE LA MALLA ---
 const mallaMedicina = {
@@ -110,22 +111,19 @@ export default function Page() {
 
   const [semestreActivo, setSemestreActivo] = useState("Semestre 1");
   const [ramosSeleccionados, setRamosSeleccionados] = useState([]);
-  const [aprobados, setAprobados] = useState([]); // Nuevo estado para aprobados
+  const [aprobados, setAprobados] = useState([]);
   const [notasGlobales, setNotasGlobales] = useState({});
   const [nuevaNota, setNuevaNota] = useState({ nombre: '', nota: '', peso: '' });
 
   // --- 1. CARGA INICIAL DE DATOS DESDE SUPABASE ---
   useEffect(() => {
     const cargarDatos = async () => {
-      // Cargar Ramos Seleccionados
       const { data: ramosBD } = await supabase.from('ramos').select('id_malla');
       if (ramosBD) setRamosSeleccionados(ramosBD.map(r => r.id_malla));
 
-      // Cargar Ramos Aprobados
       const { data: aprobadosBD } = await supabase.from('ramos_aprobados').select('id_malla');
       if (aprobadosBD) setAprobados(aprobadosBD.map(a => a.id_malla));
 
-      // Cargar Notas
       const { data: notasBD } = await supabase.from('notas').select('*');
       if (notasBD) {
         const notasAgrupadas = {};
@@ -158,7 +156,6 @@ export default function Page() {
     }
   };
 
-  // Nueva función para toggle de aprobados
   const toggleAprobado = async (id) => {
     const esAprobado = aprobados.includes(id);
     if (esAprobado) {
@@ -200,6 +197,7 @@ export default function Page() {
       }
     }
   };
+
   const eliminarNota = async (idNota) => {
     const { error } = await supabase.from('notas').delete().eq('id', idNota);
     if (!error) {
@@ -238,7 +236,7 @@ export default function Page() {
     <div className="flex h-screen bg-[#0f172a] text-white overflow-hidden">
       <Sidebar 
         view={view} 
-        setView={(v) => { setView(v); setSelectedRamo(null); }} // Resetear ramo al cambiar vista
+        setView={(v) => { setView(v); setSelectedRamo(null); }}
         onLogout={() => setIsLoggedIn(false)}
         malla={mallaMedicina}
         semestreActivo={semestreActivo}
@@ -258,21 +256,26 @@ export default function Page() {
             />
           )}
 
-          {view === 'malla' && (
-  <MallaCurricular 
-    key="malla"
-    malla={mallaMedicina}
-    aprobados={aprobados}
-    toggleAprobado={toggleAprobado}
-    // Añadimos esto para que pueda entrar a ver el detalle
-    onSelectRamo={(ramoId) => {
-      const ramoCompleto = obtenerRamosCompletos().find(r => r.id === ramoId);
-      setSelectedRamo(ramoCompleto);
-    }}
-  />
-)}
+          {view === 'malla' && !selectedRamo && (
+            <MallaCurricular 
+              key="malla"
+              malla={mallaMedicina}
+              aprobados={aprobados}
+              toggleAprobado={toggleAprobado}
+              onSelectRamo={(ramoId) => {
+                const ramoCompleto = obtenerRamosCompletos().find(r => r.id === ramoId);
+                setSelectedRamo(ramoCompleto);
+              }}
+            />
+          )}
 
-          {view === 'calendario' && <Calendario key="cal" />}
+          {view === 'horario' && !selectedRamo && (
+            <Horario key="horario" />
+          )}
+
+          {view === 'calendario' && !selectedRamo && (
+            <Calendario key="cal" />
+          )}
 
           {selectedRamo && (
             <RamoDetail 
