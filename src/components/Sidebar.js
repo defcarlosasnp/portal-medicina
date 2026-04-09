@@ -33,6 +33,12 @@ export default function Sidebar({
           active={view === 'calendario'} 
           onClick={() => setView('calendario')} 
         />
+        <SidebarItem
+        icon ={<malla size={20} />}
+        label="Malla"
+        active={view === 'malla'}
+        onClick={() => setView('malla')}
+        />
       </nav>
 
       {/* Sección de Selección de Ramos */}

@@ -1,7 +1,7 @@
 'use client'
-import React, { useState, useEffect } from 'react'; // Corregido: añadido useEffect
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { supabase } from '../lib/supabase'; // Corregido: añadido supabase
+import { supabase } from '../lib/supabase';
 
 import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
@@ -9,6 +9,7 @@ import Calendario from '../components/Calendario';
 import RamoDetail from '../components/RamoDetail';
 import ModalNota from '../components/ModalNota';
 import Login from '../components/Login';
+import MallaCurricular from '../components/MallaCurricular'; // Importa el nuevo componente
 
 // --- BASE DE DATOS DE LA MALLA ---
 const mallaMedicina = {
@@ -109,15 +110,22 @@ export default function Page() {
 
   const [semestreActivo, setSemestreActivo] = useState("Semestre 1");
   const [ramosSeleccionados, setRamosSeleccionados] = useState([]);
+  const [aprobados, setAprobados] = useState([]); // Nuevo estado para aprobados
   const [notasGlobales, setNotasGlobales] = useState({});
   const [nuevaNota, setNuevaNota] = useState({ nombre: '', nota: '', peso: '' });
 
   // --- 1. CARGA INICIAL DE DATOS DESDE SUPABASE ---
   useEffect(() => {
     const cargarDatos = async () => {
+      // Cargar Ramos Seleccionados
       const { data: ramosBD } = await supabase.from('ramos').select('id_malla');
       if (ramosBD) setRamosSeleccionados(ramosBD.map(r => r.id_malla));
 
+      // Cargar Ramos Aprobados
+      const { data: aprobadosBD } = await supabase.from('ramos_aprobados').select('id_malla');
+      if (aprobadosBD) setAprobados(aprobadosBD.map(a => a.id_malla));
+
+      // Cargar Notas
       const { data: notasBD } = await supabase.from('notas').select('*');
       if (notasBD) {
         const notasAgrupadas = {};
@@ -147,6 +155,18 @@ export default function Page() {
     } else {
       await supabase.from('ramos').insert([{ id_malla: id }]);
       setRamosSeleccionados(prev => [...prev, id]);
+    }
+  };
+
+  // Nueva función para toggle de aprobados
+  const toggleAprobado = async (id) => {
+    const esAprobado = aprobados.includes(id);
+    if (esAprobado) {
+      await supabase.from('ramos_aprobados').delete().eq('id_malla', id);
+      setAprobados(prev => prev.filter(item => item !== id));
+    } else {
+      await supabase.from('ramos_aprobados').insert([{ id_malla: id }]);
+      setAprobados(prev => [...prev, id]);
     }
   };
 
@@ -214,7 +234,7 @@ export default function Page() {
     <div className="flex h-screen bg-[#0f172a] text-white overflow-hidden">
       <Sidebar 
         view={view} 
-        setView={setView} 
+        setView={(v) => { setView(v); setSelectedRamo(null); }} // Resetear ramo al cambiar vista
         onLogout={() => setIsLoggedIn(false)}
         malla={mallaMedicina}
         semestreActivo={semestreActivo}
@@ -231,6 +251,15 @@ export default function Page() {
               ramos={ramosVisibles} 
               calcularPromedio={calcularPromedio} 
               onSelectRamo={setSelectedRamo} 
+            />
+          )}
+
+          {view === 'malla' && (
+            <MallaCurricular 
+              key="malla"
+              malla={mallaMedicina}
+              aprobados={aprobados}
+              toggleAprobado={toggleAprobado}
             />
           )}
 
