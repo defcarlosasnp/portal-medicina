@@ -106,17 +106,90 @@ export default function Page() {
   const [selectedRamo, setSelectedRamo] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Estados de la Malla
   const [semestreActivo, setSemestreActivo] = useState("Semestre 1");
-  const [ramosSeleccionados, setRamosSeleccionados] = useState([1, 2, 3]); // IDs que aparecen en Dashboard
-  
-  // Estado de todas las notas (Se guardan por ID de ramo)
+  const [ramosSeleccionados, setRamosSeleccionados] = useState([]); // Iniciamos vacío
   const [notasGlobales, setNotasGlobales] = useState({});
   const [nuevaNota, setNuevaNota] = useState({ nombre: '', nota: '', peso: '' });
 
-  // --- LÓGICA DE DATOS ---
-  
-  // 1. Unimos la info básica de la malla con las notas que el usuario ha ingresado
+  // --- 1. CARGA INICIAL DE DATOS DESDE SUPABASE ---
+  useEffect(() => {
+    const cargarDatos = async () => {
+      // Cargar Ramos Seleccionados (IDs)
+      const { data: ramosBD } = await supabase.from('ramos').select('id_malla');
+      if (ramosBD) setRamosSeleccionados(ramosBD.map(r => r.id_malla));
+
+      // Cargar Notas
+      const { data: notasBD } = await supabase.from('notas').select('*');
+      if (notasBD) {
+        const notasAgrupadas = {};
+        notasBD.forEach(n => {
+          if (!notasAgrupadas[n.ramo_id]) notasAgrupadas[n.ramo_id] = [];
+          notasAgrupadas[n.ramo_id].push({
+            id: n.id,
+            nombre: n.nombre,
+            nota: n.valor,
+            peso: n.ponderacion
+          });
+        });
+        setNotasGlobales(notasAgrupadas);
+      }
+    };
+
+    if (isLoggedIn) cargarDatos();
+  }, [isLoggedIn]);
+
+  // --- 2. LÓGICA DE ACTUALIZACIÓN ---
+
+  // Guardar/Eliminar Ramos en el Sidebar
+  const toggleRamo = async (id) => {
+    const existe = ramosSeleccionados.includes(id);
+    
+    if (existe) {
+      await supabase.from('ramos').delete().eq('id_malla', id);
+      setRamosSeleccionados(prev => prev.filter(item => item !== id));
+    } else {
+      await supabase.from('ramos').insert([{ id_malla: id }]);
+      setRamosSeleccionados(prev => [...prev, id]);
+    }
+  };
+
+  // Guardar Nota en la BD
+  const agregarNota = async () => {
+    if (nuevaNota.nombre && nuevaNota.nota && nuevaNota.peso && selectedRamo) {
+      const { data, error } = await supabase.from('notas').insert([{
+        nombre: nuevaNota.nombre,
+        valor: parseFloat(nuevaNota.nota),
+        ponderacion: parseInt(nuevaNota.peso),
+        ramo_id: selectedRamo.id
+      }]).select();
+
+      if (data) {
+        const notaNueva = { 
+          id: data[0].id, 
+          nombre: data[0].nombre, 
+          nota: data[0].valor, 
+          peso: data[0].ponderacion 
+        };
+        
+        const nuevasNotas = [...(notasGlobales[selectedRamo.id] || []), notaNueva];
+        setNotasGlobales({ ...notasGlobales, [selectedRamo.id]: nuevasNotas });
+        setSelectedRamo({ ...selectedRamo, notas: nuevasNotas });
+        setNuevaNota({ nombre: '', nota: '', peso: '' });
+        setShowModal(false);
+      }
+    }
+  };
+
+  const eliminarNota = async (idNota) => {
+    const { error } = await supabase.from('notas').delete().eq('id', idNota);
+    if (!error) {
+      const nuevasNotasRamo = (notasGlobales[selectedRamo.id] || []).filter(n => n.id !== idNota);
+      setNotasGlobales({ ...notasGlobales, [selectedRamo.id]: nuevasNotasRamo });
+      setSelectedRamo({ ...selectedRamo, notas: nuevasNotasRamo });
+    }
+  };
+
+  // --- REUTILIZAMOS TU LÓGICA DE CÁLCULO ---
   const obtenerRamosCompletos = () => {
     return Object.values(mallaMedicina)
       .flat()
@@ -126,14 +199,7 @@ export default function Page() {
       }));
   };
 
-  // 2. Filtramos solo los que ella marcó en el Sidebar para mostrar en el Dashboard
   const ramosVisibles = obtenerRamosCompletos().filter(r => ramosSeleccionados.includes(r.id));
-
-  const toggleRamo = (id) => {
-    setRamosSeleccionados(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-  };
 
   const calcularPromedio = (listaNotas) => {
     if (!listaNotas || listaNotas.length === 0) return "0.0";
@@ -147,39 +213,10 @@ export default function Page() {
     return listaNotas.reduce((acc, n) => acc + parseFloat(n.peso || 0), 0);
   };
 
-  const agregarNota = () => {
-    if (nuevaNota.nombre && nuevaNota.nota && nuevaNota.peso && selectedRamo) {
-      const notaFinal = { 
-        ...nuevaNota, 
-        id: Date.now(), 
-        nota: parseFloat(nuevaNota.nota), 
-        peso: parseFloat(nuevaNota.peso) 
-      };
-      
-      const notasActualesRamo = notasGlobales[selectedRamo.id] || [];
-      const nuevasNotasRamo = [...notasActualesRamo, notaFinal];
-      
-      setNotasGlobales({ ...notasGlobales, [selectedRamo.id]: nuevasNotasRamo });
-      
-      // Actualizamos el objeto seleccionado para que la vista detalle se refresque
-      setSelectedRamo({ ...selectedRamo, notas: nuevasNotasRamo });
-      
-      setNuevaNota({ nombre: '', nota: '', peso: '' });
-      setShowModal(false);
-    }
-  };
-
-  const eliminarNota = (idNota) => {
-    const nuevasNotasRamo = (notasGlobales[selectedRamo.id] || []).filter(n => n.id !== idNota);
-    setNotasGlobales({ ...notasGlobales, [selectedRamo.id]: nuevasNotasRamo });
-    setSelectedRamo({ ...selectedRamo, notas: nuevasNotasRamo });
-  };
-
   if (!isLoggedIn) return <Login onLogin={() => setIsLoggedIn(true)} />;
 
   return (
     <div className="flex h-screen bg-[#0f172a] text-white overflow-hidden">
-      
       <Sidebar 
         view={view} 
         setView={setView} 
@@ -193,7 +230,6 @@ export default function Page() {
 
       <main className="flex-1 overflow-y-auto p-6 md:p-10 relative">
         <AnimatePresence mode="wait">
-          
           {view === 'dashboard' && !selectedRamo && (
             <Dashboard 
               key="dash" 
@@ -216,7 +252,6 @@ export default function Page() {
               calcularProgresoPeso={calcularProgresoPeso}
             />
           )}
-
         </AnimatePresence>
       </main>
 
