@@ -1,6 +1,7 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Corregido: añadido useEffect
 import { AnimatePresence } from 'framer-motion';
+import { supabase } from '../lib/supabase'; // Corregido: añadido supabase
 
 import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
@@ -9,7 +10,7 @@ import RamoDetail from '../components/RamoDetail';
 import ModalNota from '../components/ModalNota';
 import Login from '../components/Login';
 
-// --- BASE DE DATOS DE LA MALLA (Sigue completando según la foto) ---
+// --- BASE DE DATOS DE LA MALLA ---
 const mallaMedicina = {
   "Semestre 1": [
     { id: 1, nombre: 'Ética y Filosofía de la Medicina', color: 'bg-slate-600' },
@@ -107,18 +108,16 @@ export default function Page() {
   const [showModal, setShowModal] = useState(false);
 
   const [semestreActivo, setSemestreActivo] = useState("Semestre 1");
-  const [ramosSeleccionados, setRamosSeleccionados] = useState([]); // Iniciamos vacío
+  const [ramosSeleccionados, setRamosSeleccionados] = useState([]);
   const [notasGlobales, setNotasGlobales] = useState({});
   const [nuevaNota, setNuevaNota] = useState({ nombre: '', nota: '', peso: '' });
 
   // --- 1. CARGA INICIAL DE DATOS DESDE SUPABASE ---
   useEffect(() => {
     const cargarDatos = async () => {
-      // Cargar Ramos Seleccionados (IDs)
       const { data: ramosBD } = await supabase.from('ramos').select('id_malla');
       if (ramosBD) setRamosSeleccionados(ramosBD.map(r => r.id_malla));
 
-      // Cargar Notas
       const { data: notasBD } = await supabase.from('notas').select('*');
       if (notasBD) {
         const notasAgrupadas = {};
@@ -140,10 +139,8 @@ export default function Page() {
 
   // --- 2. LÓGICA DE ACTUALIZACIÓN ---
 
-  // Guardar/Eliminar Ramos en el Sidebar
   const toggleRamo = async (id) => {
     const existe = ramosSeleccionados.includes(id);
-    
     if (existe) {
       await supabase.from('ramos').delete().eq('id_malla', id);
       setRamosSeleccionados(prev => prev.filter(item => item !== id));
@@ -153,10 +150,9 @@ export default function Page() {
     }
   };
 
-  // Guardar Nota en la BD
   const agregarNota = async () => {
     if (nuevaNota.nombre && nuevaNota.nota && nuevaNota.peso && selectedRamo) {
-      const { data, error } = await supabase.from('notas').insert([{
+      const { data } = await supabase.from('notas').insert([{
         nombre: nuevaNota.nombre,
         valor: parseFloat(nuevaNota.nota),
         ponderacion: parseInt(nuevaNota.peso),
@@ -189,7 +185,6 @@ export default function Page() {
     }
   };
 
-  // --- REUTILIZAMOS TU LÓGICA DE CÁLCULO ---
   const obtenerRamosCompletos = () => {
     return Object.values(mallaMedicina)
       .flat()
