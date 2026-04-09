@@ -1,19 +1,63 @@
-import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Plus, CheckCircle2, Circle, Layout } from 'lucide-react';
 
 export default function Dashboard({ ramos, calcularPromedio, onSelectRamo }) {
-  const [pendientes, setPendientes] = useState([
-    { id: 1, texto: 'Estudiar para Anatomía', completado: false },
-    { id: 2, texto: 'Comprar delantal nuevo', completado: true }
-  ]);
+  const [pendientes, setPendientes] = useState([]);
   const [nuevoP, setNuevoP] = useState("");
 
-  const addP = (e) => {
+  // 1. Cargar pendientes desde Supabase al iniciar
+  useEffect(() => {
+    fetchPendientes();
+  }, []);
+
+  async function fetchPendientes() {
+    const { data, error } = await supabase
+      .from('tareas') // Usamos la tabla 'tareas' que creamos en Supabase
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (data) {
+      // Mapeamos los datos de la BD a tu formato de objeto
+      const formateados = data.map(t => ({
+        id: t.id,
+        texto: t.texto,
+        completado: t.completada
+      }));
+      setPendientes(formateados);
+    }
+  }
+
+  // 2. Agregar pendiente a Supabase
+  const addP = async (e) => {
     e.preventDefault();
     if (!nuevoP.trim()) return;
-    setPendientes([{ id: Date.now(), texto: nuevoP, completado: false }, ...pendientes]);
-    setNuevoP("");
+
+    const { data, error } = await supabase
+      .from('tareas')
+      .insert([{ texto: nuevoP, completada: false }])
+      .select();
+
+    if (data) {
+      const nuevoObj = { id: data[0].id, texto: data[0].texto, completado: false };
+      setPendientes([nuevoObj, ...pendientes]);
+      setNuevoP("");
+    }
+  };
+
+  // 3. Cambiar estado (Check/Uncheck) en Supabase
+  const toggleP = async (id, estadoActual) => {
+    const { error } = await supabase
+      .from('tareas')
+      .update({ completada: !estadoActual })
+      .eq('id', id);
+
+    if (!error) {
+      setPendientes(pendientes.map(p => 
+        p.id === id ? { ...p, completado: !estadoActual } : p
+      ));
+    }
   };
 
   return (
@@ -36,7 +80,6 @@ export default function Dashboard({ ramos, calcularPromedio, onSelectRamo }) {
         </div>
 
         {ramos.length === 0 ? (
-          /* Estado Vacío: Cuando no hay ramos seleccionados */
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }}
@@ -51,7 +94,6 @@ export default function Dashboard({ ramos, calcularPromedio, onSelectRamo }) {
             </p>
           </motion.div>
         ) : (
-          /* Grilla de Ramos Seleccionados */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <AnimatePresence>
               {ramos.map((ramo) => (
@@ -65,9 +107,7 @@ export default function Dashboard({ ramos, calcularPromedio, onSelectRamo }) {
                   onClick={() => onSelectRamo(ramo)}
                   className="p-8 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all cursor-pointer group shadow-xl relative overflow-hidden"
                 >
-                  {/* Decoración de fondo suave */}
                   <div className={`absolute top-0 right-0 w-24 h-24 ${ramo.color} opacity-[0.03] blur-3xl`} />
-                  
                   <div className="flex justify-between items-start mb-10 relative z-10">
                     <div className={`p-4 rounded-2xl ${ramo.color} bg-opacity-20 text-white shadow-lg group-hover:scale-110 transition-transform`}>
                       <BookOpen size={28} />
@@ -122,7 +162,7 @@ export default function Dashboard({ ramos, calcularPromedio, onSelectRamo }) {
               <motion.div 
                 layout
                 key={p.id} 
-                onClick={() => setPendientes(pendientes.map(i => i.id === p.id ? {...i, completado: !i.completado} : i))}
+                onClick={() => toggleP(p.id, p.completado)}
                 className={`flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all border ${
                   p.completado 
                   ? 'bg-emerald-500/5 border-transparent opacity-40' 
@@ -142,7 +182,6 @@ export default function Dashboard({ ramos, calcularPromedio, onSelectRamo }) {
           </div>
         </div>
 
-        {/* Pequeño widget informativo */}
         <div className="p-6 rounded-[30px] bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-white/5">
           <p className="text-[10px] font-black text-slate-500 uppercase mb-1">Dato del día</p>
           <p className="text-xs text-slate-400 italic">"Anatomía se gana con repetición y paciencia. ¡Tú puedes!"</p>
