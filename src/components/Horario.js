@@ -75,40 +75,44 @@ export default function Horario() {
                   {bloque}
                 </td>
                 {DIAS.map(dia => {
-                  const clase = clases.find(c => c.dia === dia && c.bloque_inicio.startsWith(bloque));
-                  return (
-                    <td key={`${dia}-${bloque}`} className="p-2 border border-white/5 h-32 relative group">
-                      {clase ? (
-                        <motion.div 
-                          layoutId={clase.id}
-                          className="h-full w-full bg-purple-600/20 border border-purple-500/50 rounded-2xl p-4 flex flex-col justify-between"
-                        >
-                          <span className="text-[11px] font-black text-white uppercase leading-tight">
-                            {clase.nombre_clase}
-                          </span>
-                          <button 
-                            onClick={() => eliminarClase(clase.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-rose-500 absolute bottom-4 right-4"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </motion.div>
-                      ) : (
-                        <div className="h-full w-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <button 
-                            onClick={() => {
-                              setNuevaClase({ ...nuevaClase, dia, bloque });
-                              setShowModal(true);
-                            }}
-                            className="text-slate-700 hover:text-purple-500 transition-colors"
-                          >
-                            <Plus size={20} />
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  );
-                })}
+  const clase = clases.find(c => c.dia === dia && c.bloque_inicio.startsWith(bloque));
+  return (
+    <td key={`${dia}-${bloque}`} className="p-2 border border-white/5 h-32 relative">
+      {clase ? (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="h-full w-full bg-purple-600/10 border border-purple-500/40 rounded-2xl p-4 flex flex-col justify-between shadow-[inset_0_0_20px_rgba(168,85,247,0.1)] group transition-all hover:bg-purple-600/20"
+        >
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-black text-purple-400 uppercase tracking-tighter opacity-70">En curso</span>
+            <span className="text-xs font-black text-white uppercase leading-tight tracking-tight group-hover:text-purple-300 transition-colors">
+              {clase.nombre_clase}
+            </span>
+          </div>
+          
+          <button 
+            onClick={() => eliminarClase(clase.id)}
+            className="self-end p-2 bg-rose-500/10 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white"
+          >
+            <Trash2 size={12} />
+          </button>
+        </motion.div>
+      ) : (
+        /* Celda vacía con efecto de "foco" al pasar el mouse */
+        <div 
+          onClick={() => {
+            setNuevaClase({ ...nuevaClase, dia, bloque });
+            setShowModal(true);
+          }}
+          className="h-full w-full rounded-2xl border-2 border-dashed border-transparent hover:border-white/10 hover:bg-white/[0.02] transition-all cursor-pointer flex items-center justify-center group"
+        >
+          <Plus size={20} className="text-slate-800 group-hover:text-purple-500/50 transition-colors" />
+        </div>
+      )}
+    </td>
+  );
+})}
               </tr>
             ))}
           </tbody>
