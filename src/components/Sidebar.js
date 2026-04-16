@@ -45,11 +45,11 @@ export default function Sidebar({
           active={view === 'malla'}
           onClick={() => setView('malla')}
         />
-        <SidebarItem 
+  <SidebarItem 
   icon={<Calculator size={20} />} 
-  label="Calculadora" 
-  active={showCalculadora} 
-  onClick={() => setShowCalculadora(true)} 
+  label="Simulador" 
+  active={false} // No necesita estar "activo" porque es un modal
+  onClick={onOpenCalculadora} // Usa la prop que pasamos desde page.js
 />
       </nav>
 

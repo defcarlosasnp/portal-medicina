@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import CalculadoraFiz from '../components/CalculadoraFiz';
+
 import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
 import Calendario from '../components/Calendario';
@@ -10,9 +10,10 @@ import RamoDetail from '../components/RamoDetail';
 import ModalNota from '../components/ModalNota';
 import Login from '../components/Login';
 import MallaCurricular from '../components/MallaCurricular';
-import Horario from '../components/Horario'; // Importación añadida
+import Horario from '../components/Horario';
+import CalculadoraFiz from '../components/CalculadoraFiz'; // Importamos el simulador
 
-// --- BASE DE DATOS DE LA MALLA ---
+// --- BASE DE DATOS DE LA MALLA (Se mantiene igual) ---
 const mallaMedicina = {
   "Semestre 1": [
     { id: 1, nombre: 'Ética y Filosofía de la Medicina', color: 'bg-slate-600' },
@@ -102,13 +103,13 @@ const mallaMedicina = {
     { id: 63, nombre: 'Internado Salud Comunitaria', color: 'bg-emerald-700' }
   ]
 };
-const [showCalculadora, setShowCalculadora] = useState(false);
 
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [view, setView] = useState('dashboard');
   const [selectedRamo, setSelectedRamo] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showCalculadora, setShowCalculadora] = useState(false); // Estado para el Simulador
 
   const [semestreActivo, setSemestreActivo] = useState("Semestre 1");
   const [ramosSeleccionados, setRamosSeleccionados] = useState([]);
@@ -116,7 +117,7 @@ export default function Page() {
   const [notasGlobales, setNotasGlobales] = useState({});
   const [nuevaNota, setNuevaNota] = useState({ nombre: '', nota: '', peso: '' });
 
-  // --- 1. CARGA INICIAL DE DATOS DESDE SUPABASE ---
+  // --- CARGA DE DATOS ---
   useEffect(() => {
     const cargarDatos = async () => {
       const { data: ramosBD } = await supabase.from('ramos').select('id_malla');
@@ -131,21 +132,16 @@ export default function Page() {
         notasBD.forEach(n => {
           if (!notasAgrupadas[n.ramo_id]) notasAgrupadas[n.ramo_id] = [];
           notasAgrupadas[n.ramo_id].push({
-            id: n.id,
-            nombre: n.nombre,
-            nota: n.valor,
-            peso: n.ponderacion
+            id: n.id, nombre: n.nombre, nota: n.valor, peso: n.ponderacion
           });
         });
         setNotasGlobales(notasAgrupadas);
       }
     };
-
     if (isLoggedIn) cargarDatos();
   }, [isLoggedIn]);
 
-  // --- 2. LÓGICA DE ACTUALIZACIÓN ---
-
+  // --- FUNCIONES (toggleRamo, toggleAprobado, agregarNota, eliminarNota) ---
   const toggleRamo = async (id) => {
     const existe = ramosSeleccionados.includes(id);
     if (existe) {
@@ -177,19 +173,10 @@ export default function Page() {
         ramo_id: parseInt(selectedRamo.id) 
       }]).select();
 
-      if (error) {
-        console.error("Error al guardar:", error.message);
-        return;
-      }
+      if (error) return;
 
       if (data) {
-        const notaNueva = { 
-          id: data[0].id, 
-          nombre: data[0].nombre, 
-          nota: data[0].valor, 
-          peso: data[0].ponderacion 
-        };
-        
+        const notaNueva = { id: data[0].id, nombre: data[0].nombre, nota: data[0].valor, peso: data[0].ponderacion };
         const nuevasNotas = [...(notasGlobales[selectedRamo.id] || []), notaNueva];
         setNotasGlobales({ ...notasGlobales, [selectedRamo.id]: nuevasNotas });
         setSelectedRamo({ ...selectedRamo, notas: nuevasNotas });
@@ -209,15 +196,10 @@ export default function Page() {
   };
 
   const obtenerRamosCompletos = () => {
-    return Object.values(mallaMedicina)
-      .flat()
-      .map(ramo => ({
-        ...ramo,
-        notas: notasGlobales[ramo.id] || []
-      }));
+    return Object.values(mallaMedicina).flat().map(ramo => ({
+      ...ramo, notas: notasGlobales[ramo.id] || []
+    }));
   };
-
-  const ramosVisibles = obtenerRamosCompletos().filter(r => ramosSeleccionados.includes(r.id));
 
   const calcularPromedio = (listaNotas) => {
     if (!listaNotas || listaNotas.length === 0) return "0.0";
@@ -244,19 +226,15 @@ export default function Page() {
         setSemestreActivo={setSemestreActivo}
         ramosSeleccionados={ramosSeleccionados}
         toggleRamo={toggleRamo}
-        
+        onOpenCalculadora={() => setShowCalculadora(true)} // Pasamos la función al Sidebar
       />
-      <CalculadoraFiz 
-  isOpen={showCalculadora} 
-  onClose={() => setShowCalculadora(false)} 
-/>
 
       <main className="flex-1 overflow-y-auto p-6 md:p-10 relative">
         <AnimatePresence mode="wait">
           {view === 'dashboard' && !selectedRamo && (
             <Dashboard 
               key="dash" 
-              ramos={ramosVisibles} 
+              ramos={obtenerRamosCompletos().filter(r => ramosSeleccionados.includes(r.id))} 
               calcularPromedio={calcularPromedio} 
               onSelectRamo={setSelectedRamo} 
             />
@@ -275,13 +253,8 @@ export default function Page() {
             />
           )}
 
-          {view === 'horario' && !selectedRamo && (
-            <Horario key="horario" />
-          )}
-
-          {view === 'calendario' && !selectedRamo && (
-            <Calendario key="cal" />
-          )}
+          {view === 'horario' && !selectedRamo && <Horario key="horario" />}
+          {view === 'calendario' && !selectedRamo && <Calendario key="cal" />}
 
           {selectedRamo && (
             <RamoDetail 
@@ -297,6 +270,7 @@ export default function Page() {
         </AnimatePresence>
       </main>
 
+      {/* MODALES GLOBALES */}
       <ModalNota 
         isOpen={showModal} 
         onClose={() => setShowModal(false)} 
@@ -304,7 +278,11 @@ export default function Page() {
         setNuevaNota={setNuevaNota} 
         onSave={agregarNota} 
       />
+
+      <CalculadoraFiz 
+        isOpen={showCalculadora} 
+        onClose={() => setShowCalculadora(false)} 
+      />
     </div>
   );
-  
 }
