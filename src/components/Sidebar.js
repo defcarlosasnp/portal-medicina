@@ -1,6 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Calendar, LogOut, ChevronDown, Map, Clock } from 'lucide-react';
-
+import { LayoutDashboard, Calendar, LogOut, ChevronDown, Map, Clock, Calculator } from 'lucide-react';
 export default function Sidebar({ 
   view, 
   setView, 
