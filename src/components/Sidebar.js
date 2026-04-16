@@ -1,5 +1,6 @@
 import React from 'react';
 import { LayoutDashboard, Calendar, LogOut, ChevronDown, Map, Clock, Calculator } from 'lucide-react';
+
 export default function Sidebar({ 
   view, 
   setView, 
@@ -8,7 +9,8 @@ export default function Sidebar({
   semestreActivo, 
   setSemestreActivo, 
   ramosSeleccionados, 
-  toggleRamo 
+  toggleRamo,
+  onOpenCalculadora // CORRECCIÓN: Se añade esta prop para que el botón funcione
 }) {
   return (
     <aside className="w-20 md:w-64 border-r border-white/10 bg-[#0f172a]/80 backdrop-blur-md flex flex-col p-4 z-20 h-full overflow-y-auto custom-scrollbar">
@@ -44,12 +46,13 @@ export default function Sidebar({
           active={view === 'malla'}
           onClick={() => setView('malla')}
         />
-  <SidebarItem 
-  icon={<Calculator size={20} />} 
-  label="Simulador" 
-  active={false} // No necesita estar "activo" porque es un modal
-  onClick={onOpenCalculadora} // Usa la prop que pasamos desde page.js
-/>
+        {/* Botón del Simulador */}
+        <SidebarItem 
+          icon={<Calculator size={20} />} 
+          label="Simulador" 
+          active={false} 
+          onClick={onOpenCalculadora} 
+        />
       </nav>
 
       {/* Sección de Selección de Ramos */}
