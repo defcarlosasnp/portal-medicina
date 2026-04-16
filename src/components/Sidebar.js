@@ -45,6 +45,12 @@ export default function Sidebar({
           active={view === 'malla'}
           onClick={() => setView('malla')}
         />
+        <SidebarItem 
+  icon={<Calculator size={20} />} 
+  label="Calculadora" 
+  active={showCalculadora} 
+  onClick={() => setShowCalculadora(true)} 
+/>
       </nav>
 
       {/* Sección de Selección de Ramos */}

@@ -99,7 +99,6 @@ export default function Horario() {
           </button>
         </motion.div>
       ) : (
-        /* Celda vacía con efecto de "foco" al pasar el mouse */
         <div 
           onClick={() => {
             setNuevaClase({ ...nuevaClase, dia, bloque });
@@ -119,7 +118,7 @@ export default function Horario() {
         </table>
       </div>
 
-      {/* Modal Simple para añadir (puedes reutilizar tu ModalNota si prefieres) */}
+      {}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-[#1e293b] p-8 rounded-[40px] border border-white/10 w-full max-w-md">

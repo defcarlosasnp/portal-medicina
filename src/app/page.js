@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-
+import CalculadoraFiz from '../components/CalculadoraFiz';
 import Sidebar from '../components/Sidebar';
 import Dashboard from '../components/Dashboard';
 import Calendario from '../components/Calendario';
@@ -102,6 +102,7 @@ const mallaMedicina = {
     { id: 63, nombre: 'Internado Salud Comunitaria', color: 'bg-emerald-700' }
   ]
 };
+const [showCalculadora, setShowCalculadora] = useState(false);
 
 export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -243,7 +244,12 @@ export default function Page() {
         setSemestreActivo={setSemestreActivo}
         ramosSeleccionados={ramosSeleccionados}
         toggleRamo={toggleRamo}
+        
       />
+      <CalculadoraFiz 
+  isOpen={showCalculadora} 
+  onClose={() => setShowCalculadora(false)} 
+/>
 
       <main className="flex-1 overflow-y-auto p-6 md:p-10 relative">
         <AnimatePresence mode="wait">
@@ -300,4 +306,5 @@ export default function Page() {
       />
     </div>
   );
+  
 }
